@@ -226,6 +226,7 @@ export class Point implements XY {
 
   /**
    * Returns new point which is the result of linear interpolation with this one and another one
+   * 返回新的点，这是与这个和另一个线性插值的结果
    * @param {XY} that
    * @param {Number} t , position of interpolation, between 0 and 1 default 0.5
    * @return {Point}
@@ -251,6 +252,7 @@ export class Point implements XY {
 
   /**
    * Returns the point between this point and another one
+   * 返回这个点和另一个点之间的点
    * @param {XY} that
    * @return {Point}
    */

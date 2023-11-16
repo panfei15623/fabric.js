@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" translate='no'>
+
+<head>
+  <meta charset="utf-8" />
+
+  <style>
+    html {
+      padding: 10px;
+      border: 20px solid;
+    }
+
+    body {
+      height: 400px;
+    }
+
+    #other {
+      width: 1500px;
+      height: 100px;
+      float: left;
+    }
+
+    #test {
+      width: 100px;
+      height: 100px;
+      padding: 20px;
+      border: 10px solid;
+      float: left;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="other">其他</div>
+  <div id="test">测试尺寸</div>
+  <script>
+    const element = document.getElementById('test')
+    box = element.getBoundingClientRect();
+
+    console.log('==docElem.clientLeft==', document.documentElement.clientLeft)
+    console.log('==box.left==', box.left)
+    console.log('==docElem.scrollLeft==', document.documentElement.scrollLeft)
+    console.log('==body.scrollLeft==', document.body.scrollLeft)
+  </script>
+</body>
+
+</html>

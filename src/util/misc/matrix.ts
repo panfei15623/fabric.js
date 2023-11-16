@@ -50,14 +50,15 @@ export const transformPoint = (
 ): Point => new Point(p).transform(t, ignoreOffset);
 
 /**
+ * 这是一个常用的数学技术，用于反转一种几何变换。在计算机图形中，通常用这种方法计算点在变换之前的位置，或者撤销之前的变换
  * Invert transformation t
  * @param {Array} t The transform
  * @return {Array} The inverted transform
  */
 export const invertTransform = (t: TMat2D): TMat2D => {
-  const a = 1 / (t[0] * t[3] - t[1] * t[2]),
-    r = [a * t[3], -a * t[1], -a * t[2], a * t[0], 0, 0] as TMat2D,
-    { x, y } = new Point(t[4], t[5]).transform(r, true);
+  const a = 1 / (t[0] * t[3] - t[1] * t[2]), // 计算变换矩阵的行列式(det)，并取其倒数，得到 a。这个值是将会用于计算逆变换矩阵的每个元素
+    r = [a * t[3], -a * t[1], -a * t[2], a * t[0], 0, 0] as TMat2D, // 进行逆变换计算，得到逆变换矩阵 r，这里假设输入矩阵是一个仿射变换矩阵，所以固定了最后两个元素为0
+    { x, y } = new Point(t[4], t[5]).transform(r, true); // 把输入矩阵的平移分量（t[4]与t[5]）进行逆变换，得到的新的平移分量赋值给逆变换矩阵的最后两个元素
   r[4] = -x;
   r[5] = -y;
   return r;

@@ -46,6 +46,7 @@ export const setCSSDimensions = (
 
 /**
  * Returns offset for a given element
+ * 返回元素的偏移量，这些偏移量是元素的边框位置、元素的滚动距离以及元素的边框和内边距宽度之和的总和
  * @param {HTMLElement} element Element to get offset for
  * @return {Object} Object with "left" and "top" properties
  */
@@ -75,6 +76,7 @@ export function getElementOffset(element: HTMLElement) {
     box = element.getBoundingClientRect();
   }
 
+  // 返回所有父元素卷起的尺寸
   const scrollLeftTop = getScrollLeftTop(element);
 
   return {

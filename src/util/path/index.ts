@@ -205,6 +205,8 @@ const CB3 = (t: number) => 3 * t * (1 - t) ** 2;
 const CB4 = (t: number) => (1 - t) ** 3;
 
 /**
+ * 找到一个贝塞尔曲线的边界
+ * 接受八个参数，分别是贝塞尔曲线的起点（begx, begy）、两个控制点（cp1x, cp1y, cp2x, cp2y）以及终点（endx, endy）
  * Calculate bounding box of a cubic Bezier curve
  * Taken from http://jsbin.com/ivomiq/56/edit (no credits available)
  * TODO: can we normalize this with the starting points set at 0 and then translated the bbox?
@@ -229,6 +231,7 @@ export function getBoundsOfCurve(
   endy: number
 ): TRectBounds {
   let argsString: string;
+  // 为了优化性能，如果已经启用了缓存（config.cachesBoundsOfCurve为真），函数首先会检查是否已经计算过这个曲线的边界。如果已经有了，就直接从缓存中取出并返回
   if (config.cachesBoundsOfCurve) {
     // eslint-disable-next-line
     argsString = [...arguments].join();
@@ -237,6 +240,8 @@ export function getBoundsOfCurve(
     }
   }
 
+  // 使用一些数学技巧来计算曲线的边界。
+  // 它首先找出可能的极值点，这些点是通过求解贝塞尔曲线的导数方程得到的。结果可能包括0到2个点。然后，函数将这些点和曲线的起点、终点一起考虑，取它们的最小和最大值，作为边界的左下角和右上角
   const sqrt = Math.sqrt,
     abs = Math.abs,
     tvalues = [],
@@ -283,6 +288,7 @@ export function getBoundsOfCurve(
 
   let j = tvalues.length;
   const jlen = j;
+  // 为了得到曲线上某点的坐标，函数使用 getPointOnCubicBezierIterator 函数，这个函数接受贝塞尔曲线的参数，并返回一个迭代器，通过这个迭代器可以计算曲线上某点的坐标
   const iterator = getPointOnCubicBezierIterator(
     begx,
     begy,
@@ -307,6 +313,8 @@ export function getBoundsOfCurve(
     new Point(Math.min(...bounds[0]), Math.min(...bounds[1])),
     new Point(Math.max(...bounds[0]), Math.max(...bounds[1])),
   ];
+
+  // 如果启用了缓存，函数会将计算的结果保存到缓存中，以便下次直接使用
   if (config.cachesBoundsOfCurve) {
     cache.boundsOfCurveCache[argsString!] = result;
   }
@@ -338,6 +346,8 @@ export const fromArcToBeziers = (
 };
 
 /**
+ * 
+此函数的目的是使路径更简单。具体来说，它将一个复杂的路径（由诸如 "m", "c", "s", "q", "t", "a" 等命令组成的路径）转换为一个由 "M", "L", "C", "Q", "Z" 命令组成的路径。这五种命令分别表示移动（M）、直线（L）、三阶贝塞尔曲线（C）、二阶贝塞尔曲线（Q）和闭合路径（Z）。此转换简化了路径的结构，并使其更易于处理
  * This function takes a parsed SVG path and makes it simpler for fabricJS logic.
  * Simplification consist of:
  * - All commands converted to absolute (lowercase to uppercase)
@@ -352,6 +362,7 @@ export const makePathSimpler = (path: TComplexPathData): TSimplePathData => {
   // x and y represent the last point of the path, AKA the previous command point.
   // we add them to each relative command to make it an absolute comment.
   // we also swap the v V h H with L, because are easier to transform.
+  // 函数首先初始化一些变量以跟踪当前点（x, y）、子路径的起点（x1, y1）以及上一个命令和反射控制点
   let x = 0,
     y = 0;
   // x1 and y1 represent the last point of the subpath. the subpath is started with
@@ -369,6 +380,16 @@ export const makePathSimpler = (path: TComplexPathData): TSimplePathData => {
   for (const parsedCommand of path) {
     const current: TComplexParsedCommand = [...parsedCommand];
     let converted: TSimpleParsedCommand | undefined;
+    // "l", "h", "v", "m", "c", "s", "q", "t", "a" 是相对命令，表示相对于当前点的位移。函数将它们转换为绝对命令，表示相对于原点的坐标
+    // 它遍历路径中的所有命令。对于每个命令，它根据命令类型进行处理：
+    // "l", "h", "v", "m", "c", "s", "q", "t", "a" 是相对命令，表示相对于当前点的位移。函数将它们转换为绝对命令，表示相对于原点的坐标。
+    // "h", "v" 是水平和垂直线，函数将它们转换为 "L" 命令，表示从当前点到给定点的直线。
+    // "m" 是相对移动，函数将它转换为 "M" 命令，表示移动到给定点。
+    // "c", "s" 是三阶贝塞尔曲线，函数将它们转换为 "C" 命令，表示由两个控制点确定的从当前点到给定点的贝塞尔曲线。
+    // "q", "t" 是二阶贝塞尔曲线，函数将它们转换为 "Q" 命令，表示由一个控制点确定的从当前点到给定点的贝塞尔曲线。
+    // "a" 是弧线，函数将它转换为一组 "C" 命令，表示同样的贝塞尔曲线。
+    // "z" 是关闭子路径，函数将其保留为 "Z" 命令。
+    // 函数还处理了控制点的反射，这在 "s"/"S" 和 "t"/"T" 命令中会出现。
     switch (
       current[0] // first letter
     ) {
@@ -503,6 +524,7 @@ export const makePathSimpler = (path: TComplexPathData): TSimplePathData => {
       previous = '';
     }
   }
+  // 函数返回一个由 "M", "L", "C", "Q", "Z" 命令组成的路径。这种路径仍然可以表示与原始路径一样的图形
   return destinationPath;
 };
 
@@ -830,7 +852,7 @@ export const getPointOnPath = (
 };
 
 /**
- *
+ *解析一个 SVG 路径字符串，并将其转换为一组数组，每个数组代表一个路径命令及其参数。解析结果以 TComplexPathData 类型返回，这个类型应该是一个二维数组，其中每个元素代表一个路径命令及其参数
  * @param {string} pathString
  * @return {TComplexPathData} An array of SVG path commands
  * @example <caption>Usage</caption>
@@ -844,13 +866,17 @@ export const getPointOnPath = (
 export const parsePath = (pathString: string): TComplexPathData => {
   // clean the string
   // add spaces around the numbers
+  // 对路径字符串进行了清理，确保所有数字之间都有空格
   pathString = cleanupSvgAttribute(pathString);
 
   const res: TComplexPathData = [];
+  // 使用正则表达式分解路径字符串，找到所有的路径命令
   for (const match of pathString.matchAll(new RegExp(rePathCommand, 'gi'))) {
     let matchStr = match[0];
     const chain: TComplexPathData = [];
     let paramArr: RegExpExecArray | null;
+    // 对于每一个路径命令，函数使用一个 do-while 循环进一步分解成一个一个的子命令
+    // 每个子命令被解析成一个数组，数组的第一个元素是命令（一个字符串），后面的元素是命令的参数（一个或多个数字）。所有的子命令组成一个链（chain）
     do {
       paramArr = new RegExp(rePathCommand, 'i').exec(matchStr);
       if (!paramArr) {
@@ -884,6 +910,7 @@ export const parsePath = (pathString: string): TComplexPathData => {
       );
     } while (paramArr);
     // add the chain, convert multiple m's to l's in the process
+    // 函数将链中的命令添加到结果数组中，并对其中的命令做了一些转换：除第一个命令外，所有的连续的 "m" 命令都被转换成了 "l" 命令
     chain.reverse().forEach((c, idx) => {
       const transformed = repeatedCommands[c[0]];
       if (idx > 0 && (transformed == 'l' || transformed == 'L')) {
@@ -897,15 +924,18 @@ export const parsePath = (pathString: string): TComplexPathData => {
 
 /**
  *
- * Converts points to a smooth SVG path
+ * Converts points to a smooth SVG path 将一组点转换为一个表示SVG路径的二维数组，以便可以用于绘制平滑的曲线
  * @param {XY[]} points Array of points
- * @param {number} [correction] Apply a correction to the path (usually we use `width / 1000`). If value is undefined 0 is used as the correction value.
+ * @param {number} [correction] Apply a correction to the path (usually we use `width / 1000`). If value is undefined 0 is used as the correction value. 修正值
+ * 被用来微调路径的起点和终点，通常用于避免与其他路径或图形的重叠或接触，或者根据某些视觉效果或设计需求来调整路径的位置
+ * 这个修正值并不会改变中间的控制点和曲线的形状，它只会影响到路径的起点和终点。因此，这只是一个微小的调整，通常不会对整体的视觉效果产生显著影响
  * @return {(string|number)[][]} An array of SVG path commands
  */
 export const getSmoothPathFromPoints = (
   points: Point[],
   correction = 0
 ): TSimplePathData => {
+  // 创建了两个 Point 对象 p1 和 p2，对应于传入点集合的前两个点
   let p1 = new Point(points[0]),
     p2 = new Point(points[1]),
     multSignX = 1,
@@ -914,17 +944,23 @@ export const getSmoothPathFromPoints = (
     len = points.length,
     manyPoints = len > 2;
 
+  // 根据第三个点和 p2 的关系确定两个乘法标记 multSignX 和 multSignY
+  // 如果点在邻点的右边或下边，则标记为1，如果在左边或上边，则标记为-1，如果与邻点重合，则标记为0
   if (manyPoints) {
     multSignX = points[2].x < p2.x ? -1 : points[2].x === p2.x ? 0 : 1;
     multSignY = points[2].y < p2.y ? -1 : points[2].y === p2.y ? 0 : 1;
   }
+
+  // 初始化一个空的 path 数组，并将其起始位置设置为 p1 经过修正后的位置
   path.push([
     'M',
     p1.x - multSignX * correction,
     p1.y - multSignY * correction,
   ]);
   let i;
+  // 对所有点进行遍历
   for (i = 1; i < len; i++) {
+    // 如果 p1 和 p2 不同，那么就计算它们的中点，并将一个二次贝塞尔曲线（以 p1 为控制点，以中点为终点）添加到路径中
     if (!p1.eq(p2)) {
       const midPoint = p1.midPointFrom(p2);
       // p1 is our bezier control point
@@ -932,11 +968,15 @@ export const getSmoothPathFromPoints = (
       // start point is p(i-1) value.
       path.push(['Q', p1.x, p1.y, midPoint.x, midPoint.y]);
     }
+    // 将 p1 更新为当前的点，并将 p2 更新为下一个点
     p1 = points[i];
     if (i + 1 < points.length) {
       p2 = points[i + 1];
     }
   }
+
+  // 所有的点已经遍历完，那么更新乘法标记并在 p1 的修正位置处结束路径
+  // 此时 p1 是最后一个点
   if (manyPoints) {
     multSignX = p1.x > points[i - 2].x ? 1 : p1.x === points[i - 2].x ? 0 : -1;
     multSignY = p1.y > points[i - 2].y ? 1 : p1.y === points[i - 2].y ? 0 : -1;
@@ -946,6 +986,7 @@ export const getSmoothPathFromPoints = (
     p1.x + multSignX * correction,
     p1.y + multSignY * correction,
   ]);
+  // 返回所得到的路径。路径是一个由字符串和数字组成的二维数组，每个元素表示一个SVG路径指令
   return path;
 };
 

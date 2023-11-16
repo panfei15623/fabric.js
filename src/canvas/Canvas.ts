@@ -1,3 +1,6 @@
+/**
+ * 各种事件
+ */
 import { LEFT_CLICK, MIDDLE_CLICK, NONE, RIGHT_CLICK } from '../constants';
 import type {
   CanvasEvents,
@@ -23,6 +26,9 @@ import type { CanvasOptions, TCanvasOptions } from './CanvasOptions';
 import { SelectableCanvas } from './SelectableCanvas';
 import { TextEditingManager } from './TextEditingManager';
 
+// 事件监听器选项，用于确定浏览器应该如何处理目标事件。
+// 当 passive 设置为 true 时，表示浏览器无需等待事件处理程序的执行，可以立即进行页面滚动或其他默认行为。这在提高在移动设备上的滚动性能时非常有用。
+// 当 passive 设置为 false 时，表示浏览器需要等待该事件处理程序的执行完毕，如果事件处理程序调用了 event.preventDefault()，则浏览器将不进行任何默认行为。这是传统的事件处理方式
 const addEventOptions = { passive: false } as EventListenerOptions;
 
 function checkClick(e: TPointerEvent, value: number) {
@@ -157,6 +163,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     return this.enablePointerEvents ? 'pointer' : 'mouse';
   }
 
+  // 在 upperCanvasEl 上绑定事件
   addOrRemove(functor: any, eventjsFunctor: 'add' | 'remove') {
     const canvasElement = this.upperCanvasEl,
       eventTypePrefix = this._getEventPrefix();
@@ -641,6 +648,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     this._resetTransformEventData();
     const canvasElement = this.upperCanvasEl,
       eventTypePrefix = this._getEventPrefix();
+    // 移除 upperCanvasEl 上的 mouseMove 事件
     removeListener(
       canvasElement,
       `${eventTypePrefix}move`,
@@ -648,6 +656,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
       addEventOptions
     );
     const doc = getDocumentFromElement(canvasElement);
+    // 在 document 添加 mouseUp 和 mouseMove 事件
     addListener(doc, `${eventTypePrefix}up`, this._onMouseUp as EventListener);
     addListener(
       doc,
@@ -1168,15 +1177,16 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
 
   /**
    * Cache common information needed during event processing
+   * 在事件处理过程中缓存一些有关于当前事件转换的数据，这样可以在后续的操作中可以直接使用并且避免重复的计算或查找
    * @private
    * @param {Event} e Event object fired on event
    */
   _cacheTransformEventData(e: TPointerEvent) {
     // reset in order to avoid stale caching
     this._resetTransformEventData();
-    this._pointer = this.getPointer(e, true);
-    this._absolutePointer = this.restorePointerVpt(this._pointer);
-    this._target = this._currentTransform
+    this._pointer = this.getPointer(e, true); // 获取当前事件的指针位置
+    this._absolutePointer = this.restorePointerVpt(this._pointer); // 还原当前的指针位置
+    this._target = this._currentTransform // 事件目标
       ? this._currentTransform.target
       : this.findTarget(e);
   }

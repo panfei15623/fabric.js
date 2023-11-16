@@ -304,10 +304,14 @@ export class Path<
     adjustPosition && this.setPositionByOrigin(pathOffset, CENTER, CENTER);
   }
 
+  // 从路径中计算边界框。边界框是一个可以包含路径的最小矩形
+  // 虽然路径中有多种命令，但这个函数只处理了 "L", "M", "C", "Q", "Z" 这五种命令, 这是因为这五种命令已经足够描述一个路径的边界了
   _calcBoundsFromPath(): TBBox {
-    const bounds: XY[] = [];
+    const bounds: XY[] = []; // 存储路径中所有点的坐标
+    // 表示子路径起始点的 subpathStartX 和 subpathStartY
     let subpathStartX = 0,
       subpathStartY = 0,
+      // 表示当前坐标的 x 和 y
       x = 0, // current x
       y = 0; // current y
 
@@ -316,20 +320,20 @@ export class Path<
       switch (
         command[0] // first letter
       ) {
-        case 'L': // lineto, absolute
+        case 'L': // lineto, absolute 函数将起点和终点加入到bounds数组
           x = command[1];
           y = command[2];
           bounds.push(new Point(subpathStartX, subpathStartY), new Point(x, y));
           break;
 
-        case 'M': // moveTo, absolute
+        case 'M': // moveTo, absolute 函数更新当前坐标和子路径起始点的坐标
           x = command[1];
           y = command[2];
           subpathStartX = x;
           subpathStartY = y;
           break;
 
-        case 'C': // bezierCurveTo, absolute
+        case 'C': // bezierCurveTo, absolute 函数调用 getBoundsOfCurve 方法计算贝塞尔曲线的边界，然后将结果添加到 bounds 数组，同时更新当前坐标为贝塞尔曲线的终点
           bounds.push(
             ...getBoundsOfCurve(
               x,
@@ -346,7 +350,7 @@ export class Path<
           y = command[6];
           break;
 
-        case 'Q': // quadraticCurveTo, absolute
+        case 'Q': // quadraticCurveTo, absolute 函数同样调用 getBoundsOfCurve 方法计算二次贝塞尔曲线的边界，并相应地更新 bounds 数组和当前坐标
           bounds.push(
             ...getBoundsOfCurve(
               x,
@@ -363,12 +367,13 @@ export class Path<
           y = command[4];
           break;
 
-        case 'Z':
+        case 'Z': // 函数将当前坐标更新为子路径起始点的坐标。
           x = subpathStartX;
           y = subpathStartY;
           break;
       }
     }
+    // 计算并返回边界框
     return makeBoundingBoxFromPoints(bounds);
   }
 

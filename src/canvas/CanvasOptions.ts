@@ -1,3 +1,6 @@
+/**
+ * 定义 CanvasOptions 和 canvasDefaults
+ */
 import type { ModifierKey, TOptionalModifierKey } from '../EventTypeDefs';
 import type { ActiveSelection } from '../shapes/ActiveSelection';
 import type { TOptions } from '../typedefs';

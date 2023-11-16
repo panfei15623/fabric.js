@@ -407,12 +407,14 @@ export class FabricObject<
   }
 
   /**
+   * 更新缓存画布的尺寸以及上下文的变换（如平移和缩放）。此函数会在缓存画布需要更新大小或者上下文需要新的变换操作时被调用。
    * Update width and height of the canvas for cache
    * returns true or false if canvas needed resize.
    * @private
    * @return {Boolean} true if the canvas has been resized
    */
   _updateCacheCanvas() {
+    // 首先，获取当前缓存画布、上下文及其尺寸等信息，并对这些尺寸进行限制，以防止尺寸超过配置限制。同时也会判断当前缓存画布的尺寸和预期尺寸以及缩放因子是否有所改变
     const canvas = this._cacheCanvas,
       context = this._cacheContext,
       dims = this._limitCacheSize(this._getCacheCanvasDimensions()),
@@ -425,6 +427,7 @@ export class FabricObject<
         width !== this.cacheWidth || height !== this.cacheHeight,
       zoomChanged = this.zoomX !== zoomX || this.zoomY !== zoomY;
 
+    // 然后检查缓存画布和上下文是否存在，如果不存在就直接返回false
     if (!canvas || !context) {
       return false;
     }
@@ -436,6 +439,7 @@ export class FabricObject<
       additionalHeight = 0,
       shouldResizeCanvas = false;
 
+    // 如果尺寸改变，则检查画布的大小是否需要增大或者缩小，如果需要会更新画布的大小
     if (dimensionsChanged) {
       const canvasWidth = (this._cacheCanvas as HTMLCanvasElement).width,
         canvasHeight = (this._cacheCanvas as HTMLCanvasElement).height,
@@ -454,6 +458,7 @@ export class FabricObject<
         additionalHeight = height * 0.1;
       }
     }
+    // 如果是文本对象并且有路径，那么无论如何都需要重绘和重新调整画布大小
     if (isTextObject(this) && this.path) {
       shouldRedraw = true;
       shouldResizeCanvas = true;
@@ -461,6 +466,8 @@ export class FabricObject<
       additionalWidth += this.getHeightOfLine(0) * this.zoomX!;
       additionalHeight += this.getHeightOfLine(0) * this.zoomY!;
     }
+    // 如果需要重绘，那么根据是否需要调整画布大小来决定是清空画布还是更新画布的尺寸
+    // 重新设置上下文的平移坐标和缩放因子。最后返回真表示成功更新了缓存画布
     if (shouldRedraw) {
       if (shouldResizeCanvas) {
         canvas.width = Math.ceil(width + additionalWidth);
@@ -481,7 +488,7 @@ export class FabricObject<
       context.scale(zoomX, zoomY);
       this.zoomX = zoomX;
       this.zoomY = zoomY;
-      return true;
+      return true; // 表示成功更新了缓存画布
     }
     return false;
   }
@@ -497,14 +504,19 @@ export class FabricObject<
   }
 
   /**
+   * 在给定的canvas上下文中(context)应用这个对象的变换(比如缩放、旋转或者位移等)
+   * 这个transform函数通常在渲染对象时被调用，以将对象的缩放、旋转和位移等变换应用到canvas上下文中
    * Transforms context when rendering an object
    * @param {CanvasRenderingContext2D} ctx Context
    */
   transform(ctx: CanvasRenderingContext2D) {
+    // 首先，它确定是否需要完全的（full）变换。这个完全的变换将在以下几种情况下发生：
+    // 当这个对象是某个群组的一部分，而这个群组还没有完成它的变换；
+    // 当这个对象是某个群组的一部分，而它的canvas的上下文是顶层的上下文(contextTop)。
     const needFullTransform =
       (this.group && !this.group._transformDone) ||
       (this.group && this.canvas && ctx === (this.canvas as Canvas).contextTop);
-    const m = this.calcTransformMatrix(!needFullTransform);
+    const m = this.calcTransformMatrix(!needFullTransform); // 计算当前对象的变换矩阵
     ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
   }
 
@@ -744,14 +756,17 @@ export class FabricObject<
   }
 
   /**
+   * 在一个给定的画布（canvas）上下文（context）中渲染对象
    * Renders an object on a specified context
    * @param {CanvasRenderingContext2D} ctx Context to render on
    */
-  render(ctx: CanvasRenderingContext2D) {
+   render(ctx: CanvasRenderingContext2D) {
     // do not render if width/height are zeros or object is not visible
+    // 首先，它检查这个对象是否可见，如果对象的宽度和高度为零，或者对象不可见，则返回，不再进行渲染
     if (this.isNotVisible()) {
       return;
     }
+    // 如果这个对象是属于一个画布，并且设置了 skipOffscreen 属性为 true（意味着忽略屏幕外的渲染），同时这个对象没有被加入到任何群组，并且当前对象不在屏幕范围内，那么函数再次返回，不进行渲染
     if (
       this.canvas &&
       this.canvas.skipOffscreen &&
@@ -760,16 +775,22 @@ export class FabricObject<
     ) {
       return;
     }
+
+    // 若对象需要进行渲染，函数保存当前 ctx 的状态， 并设置在上下文中绘制图像时应用的复合操作
     ctx.save();
     this._setupCompositeOperation(ctx);
-    this.drawSelectionBackground(ctx);
+
+    // 绘制选区背景，应用变换，设置不透明度以及阴影
+    this.drawSelectionBackground(ctx); // 没内容
     this.transform(ctx);
     this._setOpacity(ctx);
     this._setShadow(ctx);
+    // 根据应否需要缓存（shouldCache() 返回 true 表示需要缓存）来决定是否渲染缓存，并依此决定是绘制缓存的结果，还是直接调用 drawObject 方法来渲染对象
     if (this.shouldCache()) {
       this.renderCache();
       (this as TCachedFabricObject).drawCacheOnCanvas(ctx);
     } else {
+      // 如果对象未被缓存，那么会移除缓存画布，并将 dirty 属性设置为 false，表示这个对象已经被更新
       this._removeCacheCanvas();
       this.drawObject(ctx);
       this.dirty = false;
@@ -781,12 +802,19 @@ export class FabricObject<
     /* no op */
   }
 
+  // 渲染对象的缓存
+  // 这个函数的输入参数 options 可以被用于修改如何渲染缓存。比如，如果 options.forClipping 为 true，那么在调用 drawObject 方法时，对象的影子(shadow)就不会被绘制
+  // 这个函数通常是在准备渲染试图在画布上呈现的对象之前被调用，以确保缓存的内容是最新的。此外，它也可以节省重绘的性能，尤其是在对象的外观没有发生改变，而用户确持续请求新的渲染时
   renderCache(options?: any) {
     options = options || {};
+    // 它检查是否已经有了一个缓存画布(_cacheCanvas)和上下文(_cacheContext)。如果没有，就调用 _createCacheCanvas 方法来创建它们。
     if (!this._cacheCanvas || !this._cacheContext) {
       this._createCacheCanvas();
     }
+
+    // 检查缓存是否失效
     if (this.isCacheDirty() && this._cacheContext) {
+      // 如果失效，调用 drawObject 方法，在 _cacheContext 上下文中绘制对象，并设置对象的 dirty 属性为 false，即此时对象和缓存都是最新的状态，没有脏数据
       this.drawObject(this._cacheContext, options.forClipping);
       this.dirty = false;
     }
@@ -833,6 +861,7 @@ export class FabricObject<
   }
 
   /**
+   * 判断当前对象是否需要自己的缓存
    * When set to `true`, force the object to have its own cache, even if it is inside a group
    * it may be needed when your object behave in a particular way on the cache and always needs
    * its own isolated canvas to render correctly.
@@ -841,6 +870,7 @@ export class FabricObject<
    * @returns Boolean
    */
   needsItsOwnCache() {
+    // 如果当前对象的 paintFirst 属性被设置为 'stroke' ，意味着对象的描边会被首先绘制，如果此对象同时拥有填充与描边，并且该对象有阴影（属性 shadow 是一个对象），那么这个对象需要自己的缓存，此时函数返回 true。这是因为需要分别为填充和描边应用阴影效果，而这在单一的绘图操作中无法实现
     if (
       this.paintFirst === 'stroke' &&
       this.hasFill() &&
@@ -849,6 +879,7 @@ export class FabricObject<
     ) {
       return true;
     }
+    // 如果对象有剪切路径（ clipPath），则这个对象也需要自己的缓存，此时函数返回 true。这是因为剪切路径可能改变对象的可见区域，需要单独处理
     if (this.clipPath) {
       return true;
     }
@@ -856,6 +887,8 @@ export class FabricObject<
   }
 
   /**
+   * 确定对象是否应该被缓存
+   * 其结果是基于调用needsItsOwnCache函数的返回值，或者该对象的objectCaching属性为true并且该对象不在一个需要缓存的组内
    * Decide if the object should cache or not. Create its own cache level
    * objectCaching is a global flag, wins over everything
    * needsItsOwnCache should be used when the object drawing method requires
@@ -916,6 +949,8 @@ export class FabricObject<
   }
 
   /**
+   * 在指定的canvas上下文（ctx）中绘制对象。该函数还支持一个可选的布尔参数forClipping，该参数在尝试绘制剪辑路径时，被设置为true。
+   * 这个函数通常在绘制对象或者更新对象的缓存时被调用。它确保对象在被绘制时，考虑到了可能存在的背景色、剪辑路径等效果，以及可能进行的剪辑操作，保证了视图在任何情况下的正确性
    * Execute the drawing operation for an object on a specified context
    * @param {CanvasRenderingContext2D} ctx Context to render on
    * @param {boolean} forClipping apply clipping styles
@@ -923,6 +958,7 @@ export class FabricObject<
   drawObject(ctx: CanvasRenderingContext2D, forClipping?: boolean) {
     const originalFill = this.fill,
       originalStroke = this.stroke;
+    // 如果forClipping为true，函数将对象的填充颜色改为'black'，清空描边颜色，并调用_setClippingProperties方法设置剪辑效果。如果forClipping为false，则渲染对象背景
     if (forClipping) {
       this.fill = 'black';
       this.stroke = '';
@@ -931,7 +967,10 @@ export class FabricObject<
       this._renderBackground(ctx);
     }
     this._render(ctx);
+    // 如果对象有设置剪辑路径clipPath，则调用_drawClipPath方法，在对象上应用剪辑效果
     this._drawClipPath(ctx, this.clipPath);
+
+    // 恢复对象的填充和描边颜色
     this.fill = originalFill;
     this.stroke = originalStroke;
   }
@@ -956,11 +995,16 @@ export class FabricObject<
   }
 
   /**
+   * 将缓存的内容绘制到一个给定的画布上下文（context)
+   * 这个函数通常在已经存在缓存，并且缓存内容是最新的（即对象的状态未发生改变）时调用。其作用是避免重复的渲染操作，让画面的更新尽可能的快速
    * Paint the cached copy of the object on the target context.
    * @param {CanvasRenderingContext2D} ctx Context to render on
    */
   drawCacheOnCanvas(this: TCachedFabricObject, ctx: CanvasRenderingContext2D) {
+    // 由于在 drawObject 等绘制到缓存的操作中，可能存在缩放操作，因此需要进行反向缩放，保证在绘制到实际画布时保持原大小不变
     ctx.scale(1 / this.zoomX, 1 / this.zoomY);
+    // 将缓存的画布 _cacheCanvas 对应的内容绘制到目标画布的上下文 ctx
+    // drawImage 方法需要的位置参数 dx 和 dy 应该是相反的 cacheTranslationX 和 cacheTranslationY，因为在更新缓存画布的 _updateCacheCanvas 方法中，上下文已经进行了平移操作，现在需要抵消这部分平移，让画面回归原位
     ctx.drawImage(
       this._cacheCanvas,
       -this.cacheTranslationX,

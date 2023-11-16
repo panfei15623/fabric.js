@@ -60,7 +60,7 @@ export abstract class BaseBrush {
   strokeDashArray: number[] | null = null;
 
   /**
-   * When `true`, the free drawing is limited to the whiteboard size. Default to false.
+   * When `true`, the free drawing is limited to the whiteboard size. Default to false.当为“true”时，自由绘图将被限制在白板大小内
    * @type Boolean
    * @default false
    */
@@ -100,6 +100,7 @@ export abstract class BaseBrush {
 
   /**
    * Sets the transformation on given context
+   * 在给定上下文上设置转换
    * @param {CanvasRenderingContext2D} ctx context to render on
    * @private
    */
@@ -110,7 +111,7 @@ export abstract class BaseBrush {
   }
 
   protected needsFullRender() {
-    const color = new Color(this.color);
+    const color = new Color(this.color); // TODO
     return color.getAlpha() < 1 || !!this.shadow;
   }
 

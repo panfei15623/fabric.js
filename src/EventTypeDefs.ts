@@ -1,3 +1,6 @@
+/**
+ * 定义 CanvasEvents 和 StaticCanvasEvents
+ */
 import type { Control } from './controls/Control';
 import type { Point } from './Point';
 import type { FabricObject } from './shapes/Object/FabricObject';
@@ -255,6 +258,9 @@ export interface ObjectEvents
   'erasing:end': { path: FabricObject };
 }
 
+/**
+ * StaticCanvasEvents
+ */
 export interface StaticCanvasEvents extends CollectionEvents {
   // tree
   'canvas:cleared': never;
@@ -264,6 +270,9 @@ export interface StaticCanvasEvents extends CollectionEvents {
   'after:render': { ctx: CanvasRenderingContext2D };
 }
 
+/**
+ * CanvasEvents
+ */
 export interface CanvasEvents
   extends StaticCanvasEvents,
     CanvasPointerEvents,

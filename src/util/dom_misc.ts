@@ -41,6 +41,7 @@ export function getScrollLeftTop(element: HTMLElement | null) {
   return { left, top };
 }
 
+// 返回当前元素的顶级文档对象，一般是 document
 export const getDocumentFromElement = (el: HTMLElement) =>
   el.ownerDocument || null;
 

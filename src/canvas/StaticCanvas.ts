@@ -315,12 +315,13 @@ export class StaticCanvas<
         height: this.height,
         ...(dimensions as Partial<TSize>),
       };
-      this.elements.setDimensions(size, this.getRetinaScaling());
+      this.elements.setDimensions(size, this.getRetinaScaling()); // 设置 canvas width 和 height
       this.hasLostContext = true;
       this.width = size.width;
       this.height = size.height;
     }
     if (!backstoreOnly) {
+      // 设置 canvas style width 和 height
       this.elements.setCSSDimensions(dimensions);
     }
 
@@ -362,6 +363,7 @@ export class StaticCanvas<
    * @param {Array} vpt a Canvas 2D API transform matrix
    */
   setViewportTransform(vpt: TMat2D) {
+    // TODO
     const backgroundObject = this.backgroundImage,
       overlayObject = this.overlayImage,
       len = this._objects.length;
@@ -390,6 +392,7 @@ export class StaticCanvas<
    * @param {Number} value to set zoom to, less than 1 zooms out
    */
   zoomToPoint(point: Point, value: number) {
+    // TODO
     // TODO: just change the scale, preserve other transformations
     const before = point,
       vpt: TMat2D = [...this.viewportTransform];
@@ -451,6 +454,7 @@ export class StaticCanvas<
   }
 
   /**
+   * 返回绘制对象的画布上下文
    * Returns context of canvas where objects are drawn
    * @return {CanvasRenderingContext2D}
    */
@@ -508,6 +512,8 @@ export class StaticCanvas<
   }
 
   /**
+   * 计算并返回视口（viewport）的四个边界点坐标：左上（tl）、右上（tr）、左下（bl）和右下（br）
+   * 这个函数通常在需要对视口边界进行计算的场景中使用，例如缩放或拖动视口时
    * Calculate the position of the 4 corner of canvas with current viewportTransform.
    * helps to determinate when an object is in the current rendering viewport using
    * object absolute coordinates ( aCoords )
@@ -517,13 +523,17 @@ export class StaticCanvas<
   calcViewportBoundaries(): TCornerPoint {
     const width = this.width,
       height = this.height,
+      // 将视口变换 viewportTransform 进行了反转（invert），得到了 iVpt
       iVpt = invertTransform(this.viewportTransform),
+      // 函数对坐标为(0,0) 和 (width, height) 的两个点执行了变换，得到了变换后的两个坐标点 a 和 b
       a = transformPoint({ x: 0, y: 0 }, iVpt),
       b = transformPoint({ x: width, y: height }, iVpt),
       // we don't support vpt flipping
       // but the code is robust enough to mostly work with flipping
+      // 函数通过 a.min(b) 和 a.max(b) 得到了边界点的最小坐标 min 和最大坐标 max
       min = a.min(b),
       max = a.max(b);
+    // 函数构造了四个边界点（左上、右上、左下、右下）的坐标，并将其保存在 this.vptCoords 里，返回该对象
     return (this.vptCoords = {
       tl: min,
       tr: new Point(max.x, min.y),
@@ -545,33 +555,48 @@ export class StaticCanvas<
 
   /**
    * Renders background, objects, overlay and controls.
+   * 在给定的画布（canvas）上绘制一组对象
    * @param {CanvasRenderingContext2D} ctx
    * @param {Array} objects to render
    */
   renderCanvas(ctx: CanvasRenderingContext2D, objects: FabricObject[]) {
+    // 检查这个实例是否已经被销毁。如果是，就直接返回，不再进行绘制
     if (this.destroyed) {
       return;
     }
 
+    // 获取这个实例的视口变换（viewportTransform）和裁剪路径（clipPath）
     const v = this.viewportTransform,
       path = this.clipPath;
+    // 计算视口的边界，并清空传入的上下文（context)
     this.calcViewportBoundaries();
     this.clearContext(ctx);
     ctx.imageSmoothingEnabled = this.imageSmoothingEnabled;
     // @ts-expect-error node-canvas stuff
     ctx.patternQuality = 'best';
     this.fire('before:render', { ctx });
+
+    // 先绘制这个实例的背景
     this._renderBackground(ctx);
 
+    // 保存当前 ctx 的状态
     ctx.save();
+
+    // 进行一次视口变换，用于整个渲染过程
     //apply viewport transform once for all rendering process
     ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+
+    // 渲染传入的对象组，在经过视口变换后的坐标系中，绘制这些对象
     this._renderObjects(ctx, objects);
+
+    // 恢复 ctx 的状态
     ctx.restore();
     if (!this.controlsAboveOverlay) {
+      // 绘制这个实例的控制点
       this.drawControls(ctx);
     }
     if (path) {
+      // 设置了裁剪路径，就在裁剪路径上绘制和渲染缓存
       path._set('canvas', this);
       // needed to setup a couple of variables
       path.shouldCache();
@@ -579,8 +604,11 @@ export class StaticCanvas<
       path.renderCache({ forClipping: true });
       this.drawClipPathOnCanvas(ctx, path as TCachedFabricObject);
     }
+
+    // 绘制这个实例的覆盖层
     this._renderOverlay(ctx);
     if (this.controlsAboveOverlay) {
+      // 绘制这个实例的控制点
       this.drawControls(ctx);
     }
     this.fire('after:render', { ctx });
@@ -1434,8 +1462,9 @@ export class StaticCanvas<
   }
 
   /**
-   * Waits until rendering has settled to destroy the canvas
+   * Waits until rendering has settled to destroy the canvas 等待渲染完成后销毁画布
    * @returns {Promise<boolean>} a promise resolving to `true` once the canvas has been destroyed or to `false` if the canvas has was already destroyed
+   * 一旦画布被销毁，promise就解析为“true”，如果画布已经被销毁，promise就解析为“false”
    * @throws if aborted by a consequent call
    */
   dispose() {
@@ -1464,7 +1493,7 @@ export class StaticCanvas<
   }
 
   /**
-   * Clears the canvas element, disposes objects and frees resources.
+   * Clears the canvas element, disposes objects and frees resources. 清除canvas元素，释放对象并释放资源。
    *
    * Invoked as part of the **async** operation of {@link dispose}.
    *
@@ -1494,7 +1523,7 @@ export class StaticCanvas<
   }
 
   /**
-   * Returns a string representation of an instance
+   * Returns a string representation of an instance 返回实例的字符串表示形式
    * @return {String} string representation of an instance
    */
   toString() {

@@ -42,6 +42,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   declare padding: number;
 
   /**
+   * 在画布对象绝对坐标中描述对象的角位置属性分别是tl、tr、bl、br和描述四个主角
    * Describe object's corner position in canvas object absolute coordinates
    * properties are tl,tr,bl,br and describe the four main corner.
    * each property is an object with x, y, instance of Fabric.Point.
@@ -578,12 +579,17 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
     this.lineCoords = this.group ? this.aCoords : this.calcLineCoords();
   }
 
+  // 生成一个字符串类型的键（key），用来在缓存机制中唯一的标识一个特定的变换矩阵。这个键是由对象的多个属性组合而成的
   transformMatrixKey(skipGroup = false): string {
     const sep = '_';
     let prefix = '';
+
+    // 如果对象属于一个群组并且 skipGroup 为 false，则调用群组的 transformMatrixKey 方法并将其值赋给 prefix。skipGroup 参数用于决定是否包含群组的变换
     if (!skipGroup && this.group) {
       prefix = this.group.transformMatrixKey(skipGroup) + sep;
     }
+
+    // 函数返回对象的多个字段（位置、缩放、倾斜、角度、原点、大小等）以及群组的字符串表示拼接而成的字符串，作为变换矩阵在缓存中的键
     return (
       prefix +
       this.top +
@@ -615,6 +621,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
+   * 计算当前对象的变换矩阵
    * calculate transform matrix that represents the current transformations from the
    * object's properties.
    * @param {Boolean} [skipGroup] return transform matrix for object not counting parent transformations
@@ -622,21 +629,28 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
    * @return {TMat2D} transform matrix for the object
    */
   calcTransformMatrix(skipGroup = false): TMat2D {
-    let matrix = this.calcOwnMatrix();
+    let matrix = this.calcOwnMatrix(); // 计算当前对象自己的变换矩阵
     if (skipGroup || !this.group) {
+      // 直接返回对象自己的变换矩阵
       return matrix;
     }
-    const key = this.transformMatrixKey(skipGroup),
-      cache = this.matrixCache;
+
+    // 进行群组的变换
+    const key = this.transformMatrixKey(skipGroup), // 计算矩阵的关键词(key)
+      cache = this.matrixCache; // 缓存中存在对应关键词的矩阵，就直接返回这个矩阵
     if (cache && cache.key === key) {
       return cache.value;
     }
+
+    // 如果这个对象是群组的一部分，就需要计算组的变换矩阵，然后使用 multiplyTransformMatrices 函数和对象自己的矩阵进行矩阵乘法，得到最终的变换矩阵
     if (this.group) {
       matrix = multiplyTransformMatrices(
         this.group.calcTransformMatrix(false),
         matrix
       );
     }
+
+    // 将这个矩阵缓存起来，以便于下次使用，然后返回这个矩阵
     this.matrixCache = {
       key,
       value: matrix,
@@ -645,16 +659,19 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
+   * 计算当前对象自身的变换矩阵，这个矩阵能描述改对象的属性，如位置、缩放、旋转等。它通常在计算综合变换或者渲染对象时被使用
    * calculate transform matrix that represents the current transformations from the
    * object's properties, this matrix does not include the group transformation
    * @return {TMat2D} transform matrix for the object
    */
   calcOwnMatrix(): TMat2D {
+    // 函数计算矩阵的关键字(key)，并尝试从自身的矩阵缓存(ownMatrixCache)中获取已经计算的矩阵。如果找到对应关键字的缓存，则直接返回缓存的矩阵
     const key = this.transformMatrixKey(true),
       cache = this.ownMatrixCache;
     if (cache && cache.key === key) {
       return cache.value;
     }
+    // 如果缓存中没有找到，则需要计算矩阵。函数首先获取对象相对于自身中心点的坐标，然后创建一个包含了对象属性的 options 对象，允许用于构成矩阵的函数使用
     const center = this.getRelativeCenterPoint(),
       options = {
         angle: this.angle,
@@ -667,7 +684,8 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
         flipX: this.flipX,
         flipY: this.flipY,
       },
-      value = composeMatrix(options);
+      value = composeMatrix(options); // 将 options 中的变换属性组合成一个变换矩阵。
+    // 函数将计算出的矩阵存储到自身矩阵的缓存中，并返回这个矩阵
     this.ownMatrixCache = {
       key,
       value,

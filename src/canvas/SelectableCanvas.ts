@@ -189,7 +189,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
   declare fireMiddleClick: boolean;
 
   /**
-   * Keep track of the subTargets for Mouse Events
+   * Keep track of the subTargets for Mouse Events 跟踪鼠标事件的子目标
    * @type FabricObject[]
    */
   targets: FabricObject[] = [];
@@ -273,6 +273,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
 
   static ownDefaults: Record<string, any> = canvasDefaults;
 
+  // 将 staticCanvasDefaults 和 canvasDefaults 合并在一起
   static getDefaults(): Record<string, any> {
     return { ...super.getDefaults(), ...SelectableCanvas.ownDefaults };
   }
@@ -700,6 +701,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
    * Method that determines what object we are clicking on
    * 11/09/2018 TODO: would be cool if findTarget could discern between being a full target
    * or the outside part of the corner.
+   * 根据当前鼠标事件寻找画布上相应的目标对象，返回一个 FabricObject 或者 undefined
    * @param {Event} e mouse event
    * @return {FabricObject | null} the target found
    */
@@ -708,12 +710,13 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
       return undefined;
     }
 
-    const pointer = this.getPointer(e, true),
+    const pointer = this.getPointer(e, true), // 获取事件的指针位置
       activeObject = this._activeObject,
-      aObjects = this.getActiveObjects();
+      aObjects = this.getActiveObjects(); // 检索当前活动对象以及所有活动对象
 
     this.targets = [];
 
+    // 如果活动对象存在并且有至少一个活动对象，方法执行一系列的检查，以确定是否命中活动对象的角落，是否指针在活动选择上，或活动的对象是否在可能的目标中。如果满足任一条件，方法将返回这个活动对象
     if (activeObject && aObjects.length >= 1) {
       if (activeObject._findTargetCorner(pointer, isTouchEvent(e))) {
         // if we hit the corner of the active object, let's return that.
@@ -864,6 +867,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
    */
   getPointer(e: TPointerEvent, ignoreVpt = false): Point {
     // return cached values if we are in the event processing chain
+    // 首先检查缓存的指针位置
     if (this._absolutePointer && !ignoreVpt) {
       return this._absolutePointer;
     }
@@ -873,10 +877,13 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
 
     const upperCanvasEl = this.upperCanvasEl,
       bounds = upperCanvasEl.getBoundingClientRect();
+
+    // 获取当前事件的指针位置
     let pointer = getPointer(e),
       boundsWidth = bounds.width || 0,
       boundsHeight = bounds.height || 0;
 
+      // 如果边界宽度或高度为零，方法将计算边界的高度和宽度
     if (!boundsWidth || !boundsHeight) {
       if (TOP in bounds && BOTTOM in bounds) {
         boundsHeight = Math.abs(bounds.top - bounds.bottom);
@@ -887,6 +894,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     }
 
     this.calcOffset();
+    // 方法通过减去 this._offset 的左部和顶部来调整指针的 x 和 y 坐标
     pointer.x = pointer.x - this._offset.left;
     pointer.y = pointer.y - this._offset.top;
     if (!ignoreVpt) {

@@ -47,6 +47,7 @@ export class CanvasDOMManager extends StaticCanvasDOMManager {
     this.container = container;
   }
 
+  // 复用初始 canvas 中的 className，设置成可拖拽
   protected createUpperCanvas() {
     const { el: lowerCanvasEl } = this.lower;
     const el = createCanvasElement();

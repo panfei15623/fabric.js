@@ -151,7 +151,7 @@ export function createCollectionMixin<TBase extends Constructor>(Base: TBase) {
     }
 
     /**
-     * Returns number representation of a collection complexity
+     * Returns number representation of a collection complexity 返回集合复杂度的数字表示形式
      * @return {Number} complexity
      */
     complexity() {
