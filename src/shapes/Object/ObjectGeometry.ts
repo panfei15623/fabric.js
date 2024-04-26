@@ -257,10 +257,10 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
-   * Checks if object intersects with another object
+   * Checks if object intersects with another object 检查对象是否与另一个对象相交
    * @param {Object} other Object to test
-   * @param {Boolean} [absolute] use coordinates without viewportTransform
-   * @param {Boolean} [calculate] use coordinates of current position instead of calculating them
+   * @param {Boolean} [absolute] use coordinates without viewportTransform 使用不带viewportTransform的坐标
+   * @param {Boolean} [calculate] use coordinates of current position instead of calculating them 使用当前位置的坐标，而不是计算它们
    * @return {Boolean} true if object intersects with another object
    */
   intersectsWithObject(
@@ -497,7 +497,7 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
-   * return the coordinate of the 4 corners of the bounding box in HTMLCanvasElement coordinates
+   * return the coordinate of the 4 corners of the bounding box in HTMLCanvasElement coordinates 返回HTMLCanvasElement坐标中边界框四个角的坐标
    * used for bounding box interactivity with the mouse
    * @returns {TCornerPoint}
    */
@@ -543,14 +543,14 @@ export class ObjectGeometry<EventSpec extends ObjectEvents = ObjectEvents>
   }
 
   /**
-   * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates.
-   * those never change with zoom or viewport changes.
+   * Calculates the coordinates of the 4 corner of the bbox, in absolute coordinates. 计算四个角坐标，以绝对坐标表示
+   * those never change with zoom or viewport changes. 不会随着缩放或视口的改变而改变
    * @return {TCornerPoint}
    */
   calcACoords(): TCornerPoint {
     const rotateMatrix = createRotateMatrix({ angle: this.angle }),
       { x, y } = this.getRelativeCenterPoint(),
-      tMatrix = createTranslateMatrix(x, y),
+      tMatrix = createTranslateMatrix(x, y), 
       finalMatrix = multiplyTransformMatrices(tMatrix, rotateMatrix),
       dim = this._getTransformedDimensions(),
       w = dim.x / 2,

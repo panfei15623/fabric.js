@@ -888,7 +888,7 @@ export class FabricObject<
 
   /**
    * 确定对象是否应该被缓存
-   * 其结果是基于调用needsItsOwnCache函数的返回值，或者该对象的objectCaching属性为true并且该对象不在一个需要缓存的组内
+   * 其结果是基于调用needsItsOwnCache函数的返回值，或者该对象的drawBorders属性为true并且该对象不在一个需要缓存的组内
    * Decide if the object should cache or not. Create its own cache level
    * objectCaching is a global flag, wins over everything
    * needsItsOwnCache should be used when the object drawing method requires

@@ -126,7 +126,7 @@ export class ObjectOrigin<EventSpec>
 
   /**
    * Translates the coordinates from origin to center coordinates (based on the object's dimensions) 将坐标从原点转换为中心坐标(基于对象的尺寸)
-   * @param {Point} point The point which corresponds to the originX and originY params
+   * @param {Point} point The point which corresponds to the originX and originY params 对应于originX和originY参数的点
    * @param {TOriginX} originX Horizontal origin: 'left', 'center' or 'right'
    * @param {TOriginY} originY Vertical origin: 'top', 'center' or 'bottom'
    * @return {Point}

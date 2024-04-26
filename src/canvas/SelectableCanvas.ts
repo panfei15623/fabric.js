@@ -1094,6 +1094,7 @@ export class SelectableCanvas<EventSpec extends CanvasEvents = CanvasEvents>
     }
     this._activeObject = object;
 
+    // 设置 ActiveObject
     if (object instanceof ActiveSelection && this._activeSelection !== object) {
       this._activeSelection = object;
       object.set('canvas', this);

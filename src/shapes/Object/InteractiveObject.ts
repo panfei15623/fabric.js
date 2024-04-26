@@ -299,7 +299,7 @@ export class InteractiveFabricObject<
   }
 
   /**
-   * Sets corner and controls position coordinates based on current angle, width and height, left and top.
+   * Sets corner and controls position coordinates based on current angle, width and height, left and top. 根据当前角度、宽度和高度、左侧和顶部设置角和控制位置坐标。
    * oCoords are used to find the corners
    * aCoords are used to quickly find an object on the canvas
    * lineCoords are used to quickly find object during pointer events.
@@ -308,7 +308,7 @@ export class InteractiveFabricObject<
    */
   setCoords(): void {
     super.setCoords();
-    // set coordinates of the draggable boxes in the corners used to scale/rotate the image
+    // set coordinates of the draggable boxes in the corners used to scale/rotate the image 设置用于缩放/旋转图像的角落中可拖动框的坐标
     this.canvas && (this.oCoords = this.calcOCoords());
   }
 
@@ -393,7 +393,7 @@ export class InteractiveFabricObject<
   }
 
   /**
-   * Renders controls and borders for the object
+   * Renders controls and borders for the object 渲染对象的控件和边框
    * the context here is not transformed
    * @todo move to interactivity
    * @param {CanvasRenderingContext2D} ctx Context to render on
@@ -465,7 +465,7 @@ export class InteractiveFabricObject<
   }
 
   /**
-   * Draws lines from a borders of an object's bounding box to controls that have `withConnection` property set.
+   * Draws lines from a borders of an object's bounding box to controls that have `withConnection` property set. 从对象的边界框向设置了“withConnection”属性的控件绘制线条
    * Requires public properties: width, height
    * Requires public options: padding, borderColor
    * @param {CanvasRenderingContext2D} ctx Context to draw on

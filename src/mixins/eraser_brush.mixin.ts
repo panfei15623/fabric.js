@@ -1,19 +1,19 @@
 //@ts-nocheck
 import { Point } from '../Point';
-import { FabricObject } from '../shapes/Object/FabricObject';
+import type { FabricObject } from '../shapes/Object/FabricObject';
 import { uid } from '../util/internals/uid';
 
 (function (global) {
   /** ERASER_START */
 
-  var fabric = global.fabric,
+  const fabric = global.fabric,
     __drawClipPath = fabric.Object.prototype._drawClipPath;
-  var _needsItsOwnCache = fabric.Object.prototype.needsItsOwnCache;
-  var _toObject = fabric.Object.prototype.toObject;
-  var _getSvgCommons = fabric.Object.prototype.getSvgCommons;
-  var __createBaseClipPathSVGMarkup =
+  const _needsItsOwnCache = fabric.Object.prototype.needsItsOwnCache;
+  const _toObject = fabric.Object.prototype.toObject;
+  const _getSvgCommons = fabric.Object.prototype.getSvgCommons;
+  const __createBaseClipPathSVGMarkup =
     fabric.Object.prototype._createBaseClipPathSVGMarkup;
-  var __createBaseSVGMarkup = fabric.Object.prototype._createBaseSVGMarkup;
+  const __createBaseSVGMarkup = fabric.Object.prototype._createBaseSVGMarkup;
 
   fabric.Object.prototype.cacheProperties.push('eraser');
   fabric.Object.prototype.stateProperties.push('eraser');
@@ -59,7 +59,7 @@ import { uid } from '../util/internals/uid';
       __drawClipPath.call(this, ctx, clipPath);
       if (this.eraser) {
         //  update eraser size to match instance
-        var size = this._getNonTransformedDimensions();
+        const size = this._getNonTransformedDimensions();
         this.eraser.isType('eraser') &&
           this.eraser.set({
             width: size.x,
@@ -75,7 +75,7 @@ import { uid } from '../util/internals/uid';
      * @return {Object} Object representation of an instance
      */
     toObject: function (propertiesToInclude) {
-      var object = _toObject.call(
+      const object = _toObject.call(
         this,
         ['erasable'].concat(propertiesToInclude)
       );
@@ -166,18 +166,18 @@ import { uid } from '../util/internals/uid';
      * @returns {Promise<fabric.Path[]|fabric.Path[][]|void>}
      */
     applyEraserToObjects: function () {
-      var _this = this,
+      const _this = this,
         eraser = this.eraser;
       return Promise.resolve().then(function () {
         if (eraser) {
           delete _this.eraser;
-          var transform = _this.calcTransformMatrix();
+          const transform = _this.calcTransformMatrix();
           return eraser.clone().then(function (eraser) {
-            var clipPath = _this.clipPath;
+            const clipPath = _this.clipPath;
             return Promise.all(
               eraser.getObjects('path').map(function (path) {
                 //  first we transform the path from the group's coordinate system to the canvas'
-                var originalTransform = fabric.util.multiplyTransformMatrices(
+                const originalTransform = fabric.util.multiplyTransformMatrices(
                   transform,
                   path.calcTransformMatrix()
                 );
@@ -185,7 +185,7 @@ import { uid } from '../util/internals/uid';
                 return clipPath
                   ? clipPath.clone().then(
                       function (_clipPath) {
-                        var eraserPath =
+                        const eraserPath =
                           fabric.EraserBrush.prototype.applyClipPathToPath.call(
                             fabric.EraserBrush.prototype,
                             path,
@@ -256,10 +256,10 @@ import { uid } from '../util/internals/uid';
      * @return {String} svg representation of an instance
      */
     _toSVG: function (reviver) {
-      var svgString = ['<g ', 'COMMON_PARTS', ' >\n'];
-      var x = -this.width / 2,
+      const svgString = ['<g ', 'COMMON_PARTS', ' >\n'];
+      const x = -this.width / 2,
         y = -this.height / 2;
-      var rectSvg = [
+      const rectSvg = [
         '<rect ',
         'fill="white" ',
         'x="',
@@ -273,7 +273,7 @@ import { uid } from '../util/internals/uid';
         '" />\n',
       ].join('');
       svgString.push('\t\t', rectSvg);
-      for (var i = 0, len = this._objects.length; i < len; i++) {
+      for (let i = 0, len = this._objects.length; i < len; i++) {
         svgString.push('\t\t', this._objects[i].toSVG(reviver));
       }
       svgString.push('</g>\n');
@@ -290,7 +290,7 @@ import { uid } from '../util/internals/uid';
    * @returns {Promise<fabric.Eraser>}
    */
   fabric.Eraser.fromObject = function (object) {
-    var objects = object.objects || [],
+    const objects = object.objects || [],
       options = fabric.util.object.clone(object, true);
     delete options.objects;
     return Promise.all([
@@ -305,7 +305,7 @@ import { uid } from '../util/internals/uid';
     });
   };
 
-  var __renderOverlay = fabric.Canvas.prototype._renderOverlay;
+  const __renderOverlay = fabric.Canvas.prototype._renderOverlay;
   /**
    * @fires erasing:start
    * @fires erasing:end
@@ -389,12 +389,12 @@ import { uid } from '../util/internals/uid';
 
       /**
        * @private
-       * This is designed to support erasing a collection with both erasable and non-erasable objects while maintaining object stacking.\
-       * Iterates over collections to allow nested selective erasing.\
+       * This is designed to support erasing a collection with both erasable and non-erasable objects while maintaining object stacking.\ 支持擦除具有可擦除和不可擦除对象的集合，同时保持对象堆叠
+       * Iterates over collections to allow nested selective erasing.\ 允许嵌套选择性擦除
        * Prepares objects before rendering the pattern brush.\
-       * If brush is **NOT** inverted render all non-erasable objects.\
+       * If brush is **NOT** inverted render all non-erasable objects.\ 擦除不可撤销，渲染不可擦除的对象
        * If brush is inverted render all objects, erasable objects without their eraser.
-       * This will render the erased parts as if they were not erased in the first place, achieving an undo effect.
+       * This will render the erased parts as if they were not erased in the first place, achieving an undo effect. 可以撤销，渲染擦除的部分
        *
        * @param {fabric.Collection} collection
        * @param {fabric.Object[]} objects
@@ -408,7 +408,7 @@ import { uid } from '../util/internals/uid';
         restorationContext
       ) {
         objects.forEach(function (obj) {
-          var dirty = false;
+          let dirty = false;
           if (obj.forEachObject && obj.erasable === 'deep') {
             //  traverse
             this._prepareCollectionTraversal(
@@ -417,19 +417,19 @@ import { uid } from '../util/internals/uid';
               ctx,
               restorationContext
             );
-          } else if (!this.inverted && obj.erasable && obj.visible) {
+          } else if (!this.inverted && obj.erasable && obj.visible) { // 不可撤销 & 可擦除 & 可见
             //  render only non-erasable objects
-            obj.visible = false;
+            obj.visible = false; // 设置该对象不可见
             restorationContext.visibility.push(obj);
             dirty = true;
           } else if (
-            this.inverted &&
+            this.inverted && // 可撤销 & 可擦除 & 可见
             obj.erasable &&
             obj.eraser &&
             obj.visible
           ) {
             //  render all objects without eraser
-            var eraser = obj.eraser;
+            const eraser = obj.eraser;
             obj.eraser = undefined;
             obj.dirty = true;
             restorationContext.eraser.push([obj, eraser]);
@@ -443,9 +443,10 @@ import { uid } from '../util/internals/uid';
       },
 
       /**
-       * Prepare the pattern for the erasing brush
+       * Prepare the pattern for the erasing brush 准备擦除部分
        * This pattern will be drawn on the top context after clipping the main context,
        * achieving a visual effect of erasing only erasable objects
+       * 在裁剪主上下文后，擦除部分将绘制在顶部上下文，达到只擦除可擦除对象的视觉效果
        * @private
        * @param {fabric.Object[]} [objects]  override default behavior by passing objects to render on pattern
        */
@@ -453,17 +454,17 @@ import { uid } from '../util/internals/uid';
         if (!this._patternCanvas) {
           this._patternCanvas = fabric.util.createCanvasElement();
         }
-        var canvas = this._patternCanvas;
+        const canvas = this._patternCanvas;
         objects =
           objects || this.canvas._objectsToRender || this.canvas._objects;
         canvas.width = this.canvas.width;
         canvas.height = this.canvas.height;
-        var patternCtx = canvas.getContext('2d');
+        const patternCtx = canvas.getContext('2d');
         if (this.canvas._isRetinaScaling()) {
-          var retinaScaling = this.canvas.getRetinaScaling();
+          const retinaScaling = this.canvas.getRetinaScaling();
           this.canvas.__initRetinaScaling(retinaScaling, canvas, patternCtx);
         }
-        var backgroundImage = this.canvas.backgroundImage,
+        const backgroundImage = this.canvas.backgroundImage,
           bgErasable = backgroundImage && this._isErasable(backgroundImage),
           overlayImage = this.canvas.overlayImage,
           overlayErasable = overlayImage && this._isErasable(overlayImage);
@@ -492,7 +493,7 @@ import { uid } from '../util/internals/uid';
         }
         patternCtx.save();
         patternCtx.transform.apply(patternCtx, this.canvas.viewportTransform);
-        var restorationContext = { visibility: [], eraser: [], collection: [] };
+        const restorationContext = { visibility: [], eraser: [], collection: [] };
         this._prepareCollectionTraversal(
           this.canvas,
           objects,
@@ -504,7 +505,7 @@ import { uid } from '../util/internals/uid';
           obj.visible = true;
         });
         restorationContext.eraser.forEach(function (entry) {
-          var obj = entry[0],
+          const obj = entry[0],
             eraser = entry[1];
           obj.eraser = eraser;
           obj.dirty = true;
@@ -609,9 +610,9 @@ import { uid } from '../util/internals/uid';
        * @todo provide a better solution to https://github.com/fabricjs/fabric.js/issues/7984
        */
       _render: function () {
-        var ctx,
+        let ctx,
           lineWidth = this.width;
-        var t = this.canvas.getRetinaScaling(),
+        const t = this.canvas.getRetinaScaling(),
           s = 1 / t;
         //  clip canvas
         ctx = this.canvas.getContext();
@@ -641,7 +642,7 @@ import { uid } from '../util/internals/uid';
        * @returns
        */
       createPath: function (pathData) {
-        var path = this.callSuper('createPath', pathData);
+        const path = this.callSuper('createPath', pathData);
         path.globalCompositeOperation = this.inverted
           ? 'source-over'
           : 'destination-out';
@@ -663,7 +664,7 @@ import { uid } from '../util/internals/uid';
         clipPath,
         clipPathContainerTransformMatrix
       ) {
-        var pathInvTransform = fabric.util.invertTransform(
+        const pathInvTransform = fabric.util.invertTransform(
             path.calcTransformMatrix()
           ),
           clipPathTransform = clipPath.calcTransformMatrix(),
@@ -699,9 +700,9 @@ import { uid } from '../util/internals/uid';
        * @returns {Promise<fabric.Path>}
        */
       clonePathWithClipPath: function (path, object) {
-        var objTransform = object.calcTransformMatrix();
-        var clipPath = object.clipPath;
-        var _this = this;
+        const objTransform = object.calcTransformMatrix();
+        const clipPath = object.clipPath;
+        const _this = this;
         return Promise.all([
           path.clone(),
           clipPath.clone(['absolutePositioned', 'inverted']),
@@ -711,7 +712,7 @@ import { uid } from '../util/internals/uid';
       },
 
       /**
-       * Adds path to object's eraser, walks down object's descendants if necessary
+       * Adds path to object's eraser, walks down object's descendants if necessary 在对象的擦除器中添加路径，必要时遍历对象的后代
        *
        * @public
        * @fires erasing:end on object
@@ -721,10 +722,10 @@ import { uid } from '../util/internals/uid';
        * @returns {Promise<fabric.Path | fabric.Path[]>}
        */
       _addPathToObjectEraser: function (obj, path, context) {
-        var _this = this;
+        const _this = this;
         //  object is collection, i.e group
         if (obj.forEachObject && obj.erasable === 'deep') {
-          var targets = obj._objects.filter(function (_obj) {
+          const targets = obj._objects.filter(function (_obj) {
             return _obj.erasable;
           });
           if (targets.length > 0 && obj.clipPath) {
@@ -745,7 +746,7 @@ import { uid } from '../util/internals/uid';
           return;
         }
         //  prepare eraser
-        var eraser = obj.eraser;
+        let eraser = obj.eraser;
         if (!eraser) {
           eraser = new fabric.Eraser();
           obj.eraser = eraser;
@@ -753,7 +754,7 @@ import { uid } from '../util/internals/uid';
         //  clone and add path
         return path.clone().then(function (path) {
           // http://fabricjs.com/using-transformations
-          var desiredTransform = fabric.util.multiplyTransformMatrices(
+          const desiredTransform = fabric.util.multiplyTransformMatrices(
             fabric.util.invertTransform(obj.calcTransformMatrix()),
             path.calcTransformMatrix()
           );
@@ -772,7 +773,7 @@ import { uid } from '../util/internals/uid';
       },
 
       /**
-       * Add the eraser path to canvas drawables' clip paths
+       * Add the eraser path to canvas drawables' clip paths 将橡皮擦路径添加到画布绘制的剪辑路径中
        *
        * @param {fabric.Canvas} source
        * @param {fabric.Canvas} path
@@ -780,10 +781,10 @@ import { uid } from '../util/internals/uid';
        * @returns {Promise<fabric.Path[]|void>} eraser paths
        */
       applyEraserToCanvas: function (path, context) {
-        var canvas = this.canvas;
+        const canvas = this.canvas;
         return Promise.all(
           ['backgroundImage', 'overlayImage'].map(function (prop) {
-            var drawable = canvas[prop];
+            const drawable = canvas[prop];
             return (
               drawable &&
               drawable.erasable &&
@@ -805,7 +806,7 @@ import { uid } from '../util/internals/uid';
        * and add it to every intersected erasable object.
        */
       _finalizeAndAddPath: function () {
-        var ctx = this.canvas.contextTop,
+        const ctx = this.canvas.contextTop,
           canvas = this.canvas;
         ctx.closePath();
         if (this.decimate) {
@@ -816,7 +817,7 @@ import { uid } from '../util/internals/uid';
         canvas.clearContext(canvas.contextTop);
         this._isErasing = false;
 
-        var pathData =
+        const pathData =
           this._points && this._points.length > 1
             ? this.convertPointsToSVGPath(this._points)
             : null;
@@ -830,24 +831,24 @@ import { uid } from '../util/internals/uid';
           return;
         }
 
-        var path = this.createPath(pathData);
+        const path = this.createPath(pathData);
         //  needed for `intersectsWithObject`
         path.setCoords();
         //  commense event sequence
         canvas.fire('before:path:created', { path: path });
 
         // finalize erasing
-        var _this = this;
-        var context = {
+        const _this = this;
+        const context = {
           targets: [],
           subTargets: [],
           //paths: new Map(),
           drawables: {},
         };
-        var tasks = canvas._objects.map(function (obj) {
+        const tasks = canvas._objects.map(function (obj) {
           return (
             obj.erasable &&
-            obj.intersectsWithObject(path, true, true) &&
+            obj.intersectsWithObject(path, true, true) && // TODO 判断相交
             _this._addPathToObjectEraser(obj, path, context)
           );
         });

@@ -1134,7 +1134,7 @@ export class Canvas extends SelectableCanvas implements CanvasOptions {
     if (target) {
       const alreadySelected = target === this._activeObject;
       if (target.selectable && target.activeOn === 'down') {
-        this.setActiveObject(target, e);
+        this.setActiveObject(target, e); // 设置活动对象
       }
       const corner = target._findTargetCorner(
         this.getPointer(e, true),

@@ -591,6 +591,7 @@ export class StaticCanvas<
 
     // 恢复 ctx 的状态
     ctx.restore();
+    // controlsAboveOverlay: true 边角的控制点被绘制在覆盖层之上，确保用户可以与这些控制界面互动，进行缩放、旋转等操作
     if (!this.controlsAboveOverlay) {
       // 绘制这个实例的控制点
       this.drawControls(ctx);
